@@ -3,7 +3,7 @@
 import { useState } from 'react';
 
 import { useRouter } from 'next/navigation';
-import { useAuth } from '../src/hooks/useAth';
+import { useAuth } from '../src/hooks/useAuth';
 
 
 export default function LoginPage() {

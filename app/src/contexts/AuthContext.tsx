@@ -6,14 +6,17 @@ import {
   useEffect,
   useState,
 } from 'react';
-import { api } from '../services/api';
 
+import { api } from '../services/api';
 
 interface User {
   id: string;
   name: string;
   email: string;
-  role: 'GESTOR' | 'PROFISSIONAL' | 'CLIENTE';
+  role:
+    | 'GESTOR'
+    | 'PROFISSIONAL'
+    | 'CLIENTE';
 }
 
 interface AuthContextData {
@@ -45,6 +48,29 @@ export function AuthProvider({
   const [loading, setLoading] =
     useState(true);
 
+  useEffect(() => {
+    const storedUser =
+      localStorage.getItem(
+        '@marquei:user',
+      );
+
+    const token =
+      localStorage.getItem(
+        '@marquei:token',
+      );
+
+    if (token) {
+      api.defaults.headers.common.Authorization =
+        `Bearer ${token}`;
+    }
+
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+
+    setLoading(false);
+  }, []);
+
   async function signIn(
     email: string,
     password: string,
@@ -59,6 +85,9 @@ export function AuthProvider({
 
     const { accessToken, user } =
       response.data;
+
+    api.defaults.headers.common.Authorization =
+      `Bearer ${accessToken}`;
 
     localStorage.setItem(
       '@marquei:token',
@@ -82,22 +111,13 @@ export function AuthProvider({
       '@marquei:user',
     );
 
+    delete api.defaults.headers.common
+      .Authorization;
+
     setUser(null);
 
     window.location.href = '/login';
   }
-
-  useEffect(() => {
-    const storedUser = localStorage.getItem(
-      '@marquei:user',
-    );
-
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-
-    setLoading(false);
-  }, []);
 
   return (
     <AuthContext.Provider

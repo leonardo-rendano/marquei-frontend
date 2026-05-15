@@ -1,7 +1,6 @@
-'use client';
+"use client";
 
-import { useAuth } from "../../hooks/useAth";
-
+import { useAuth } from "../../hooks/useAuth";
 
 export function Header() {
   const { user, logout } = useAuth();
@@ -9,13 +8,9 @@ export function Header() {
   return (
     <header className="h-20 bg-white border-b border-zinc-200 px-8 flex items-center justify-between">
       <div>
-        <h2 className="font-semibold text-lg">
-          Olá, {user?.name}
-        </h2>
+        <h2 className="font-semibold text-lg">Olá, {user?.name}</h2>
 
-        <p className="text-sm text-zinc-500">
-          {user?.role}
-        </p>
+        <p className="text-sm text-zinc-500">{user?.role}</p>
       </div>
 
       <button
