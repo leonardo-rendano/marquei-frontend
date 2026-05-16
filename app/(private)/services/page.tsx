@@ -1,25 +1,39 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
+import { useEffect, useState } from 'react';
 
-import { createService, getServices } from "@/app/src/services/services";
+import { useAuth } from '@/app/src/hooks/useAuth';
 
-import { Service } from "@/app/src/types/service";
+import {
+  createService,
+  getServices,
+} from '@/app/src/services/services';
+
+import { Service } from '@/app/src/types/service';
 
 export default function ServicesPage() {
-  const [services, setServices] = useState<Service[]>([]);
+  const { loading: authLoading } =
+    useAuth();
 
-  const [loading, setLoading] = useState(true);
+  const [services, setServices] =
+    useState<Service[]>([]);
 
-  const [name, setName] = useState("");
+  const [loading, setLoading] =
+    useState(true);
 
-  const [duration, setDuration] = useState("");
+  const [name, setName] =
+    useState('');
 
-  const [price, setPrice] = useState("");
+  const [duration, setDuration] =
+    useState('');
+
+  const [price, setPrice] =
+    useState('');
 
   async function loadServices() {
     try {
-      const data = await getServices();
+      const data =
+        await getServices();
 
       setServices(data);
     } finally {
@@ -27,36 +41,50 @@ export default function ServicesPage() {
     }
   }
 
-  async function handleCreateService(e: React.FormEvent) {
+  async function handleCreateService(
+    e: React.FormEvent,
+  ) {
     e.preventDefault();
 
-    const service = await createService({
-      name,
-      duration: Number(duration),
-      price: Number(price),
-    });
+    const service =
+      await createService({
+        name,
+        duration: Number(duration),
+        price: Number(price),
+      });
 
-    setServices((state) => [service, ...state]);
+    setServices((state) => [
+      service,
+      ...state,
+    ]);
 
-    setName("");
-    setDuration("");
-    setPrice("");
+    setName('');
+    setDuration('');
+    setPrice('');
   }
 
   useEffect(() => {
-    loadServices();
-  }, []);
+    if (!authLoading) {
+      loadServices();
+    }
+  }, [authLoading]);
 
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold">Serviços</h1>
+        <h1 className="text-3xl font-bold">
+          Serviços
+        </h1>
 
-        <p className="text-zinc-500">Gerencie os serviços do salão</p>
+        <p className="text-zinc-500">
+          Gerencie os serviços do salão
+        </p>
       </div>
 
       <form
-        onSubmit={handleCreateService}
+        onSubmit={
+          handleCreateService
+        }
         className="bg-white rounded-2xl p-6 shadow-sm flex gap-4"
       >
         <input
@@ -64,7 +92,9 @@ export default function ServicesPage() {
           placeholder="Nome"
           className="h-12 border rounded-xl px-4 flex-1"
           value={name}
-          onChange={(e) => setName(e.target.value)}
+          onChange={(e) =>
+            setName(e.target.value)
+          }
         />
 
         <input
@@ -72,7 +102,11 @@ export default function ServicesPage() {
           placeholder="Duração"
           className="h-12 border rounded-xl px-4 w-40"
           value={duration}
-          onChange={(e) => setDuration(e.target.value)}
+          onChange={(e) =>
+            setDuration(
+              e.target.value,
+            )
+          }
         />
 
         <input
@@ -80,7 +114,9 @@ export default function ServicesPage() {
           placeholder="Preço"
           className="h-12 border rounded-xl px-4 w-40"
           value={price}
-          onChange={(e) => setPrice(e.target.value)}
+          onChange={(e) =>
+            setPrice(e.target.value)
+          }
         />
 
         <button
@@ -93,29 +129,54 @@ export default function ServicesPage() {
 
       <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
         {loading ? (
-          <div className="p-6">Carregando...</div>
+          <div className="p-6">
+            Carregando...
+          </div>
         ) : (
           <table className="w-full">
             <thead className="bg-zinc-100 border-b">
               <tr>
-                <th className="text-left p-4">Serviço</th>
+                <th className="text-left p-4">
+                  Serviço
+                </th>
 
-                <th className="text-left p-4">Duração</th>
+                <th className="text-left p-4">
+                  Duração
+                </th>
 
-                <th className="text-left p-4">Preço</th>
+                <th className="text-left p-4">
+                  Preço
+                </th>
               </tr>
             </thead>
 
             <tbody>
-              {services.map((service) => (
-                <tr key={service.id} className="border-b">
-                  <td className="p-4">{service.name}</td>
+              {services.map(
+                (service) => (
+                  <tr
+                    key={service.id}
+                    className="border-b"
+                  >
+                    <td className="p-4">
+                      {service.name}
+                    </td>
 
-                  <td className="p-4">{service.duration} min</td>
+                    <td className="p-4">
+                      {
+                        service.duration
+                      }{' '}
+                      min
+                    </td>
 
-                  <td className="p-4">R$ {Number(service.price).toFixed(2)}</td>
-                </tr>
-              ))}
+                    <td className="p-4">
+                      R${' '}
+                      {Number(
+                        service.price,
+                      ).toFixed(2)}
+                    </td>
+                  </tr>
+                ),
+              )}
             </tbody>
           </table>
         )}

@@ -1,7 +1,6 @@
 'use client';
 
 import { ReactNode, useEffect } from 'react';
-
 import { useRouter } from 'next/navigation';
 
 import { Header } from '@/app/src/components/layout/Header';
@@ -14,21 +13,15 @@ export default function DashboardLayout({
   children: ReactNode;
 }) {
   const router = useRouter();
-
-  const { user, loading } =
-    useAuth();
+  const { user, loading } = useAuth();
 
   useEffect(() => {
     if (!loading && !user) {
-      router.push('/login');
+      router.replace('/login');
     }
   }, [loading, user, router]);
 
-  if (loading) {
-    return null;
-  }
-
-  if (!user) {
+  if (loading || !user) {
     return null;
   }
 
@@ -39,9 +32,7 @@ export default function DashboardLayout({
       <div className="flex-1">
         <Header />
 
-        <main className="p-8">
-          {children}
-        </main>
+        <main className="p-8">{children}</main>
       </div>
     </div>
   );

@@ -7,112 +7,59 @@ import {
   useState,
 } from 'react';
 
-import { api } from '../services/api';
-
 interface User {
   id: string;
   name: string;
   email: string;
-  role:
-    | 'GESTOR'
-    | 'PROFISSIONAL'
-    | 'CLIENTE';
+  role: 'GESTOR' | 'PROFISSIONAL' | 'CLIENTE';
 }
 
 interface AuthContextData {
   user: User | null;
-
-  signIn: (
-    email: string,
-    password: string,
-  ) => Promise<void>;
-
-  logout: () => void;
-
   loading: boolean;
+  signIn: (email: string, password: string) => Promise<void>;
+  logout: () => void;
 }
 
-interface Props {
-  children: ReactNode;
-}
+export const AuthContext = createContext({} as AuthContextData);
 
-export const AuthContext =
-  createContext({} as AuthContextData);
-
-export function AuthProvider({
-  children,
-}: Props) {
-  const [user, setUser] =
-    useState<User | null>(null);
-
-  const [loading, setLoading] =
-    useState(true);
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const storedUser =
-      localStorage.getItem(
-        '@marquei:user',
-      );
+    const timeout = setTimeout(() => {
+      const storedUser = localStorage.getItem('@marquei:user');
 
-    const token =
-      localStorage.getItem(
-        '@marquei:token',
-      );
+      if (storedUser) {
+        setUser(JSON.parse(storedUser));
+      }
 
-    if (token) {
-      api.defaults.headers.common.Authorization =
-        `Bearer ${token}`;
-    }
+      setLoading(false);
+    }, 0);
 
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-
-    setLoading(false);
+    return () => clearTimeout(timeout);
   }, []);
 
-  async function signIn(
-    email: string,
-    password: string,
-  ) {
-    const response = await api.post(
-      '/auth/login',
-      {
-        email,
-        password,
-      },
-    );
+  async function signIn(email: string, password: string) {
+    const { api } = await import('../services/api');
 
-    const { accessToken, user } =
-      response.data;
+    const response = await api.post('/auth/login', {
+      email,
+      password,
+    });
 
-    api.defaults.headers.common.Authorization =
-      `Bearer ${accessToken}`;
+    const { accessToken, user } = response.data;
 
-    localStorage.setItem(
-      '@marquei:token',
-      accessToken,
-    );
-
-    localStorage.setItem(
-      '@marquei:user',
-      JSON.stringify(user),
-    );
+    localStorage.setItem('@marquei:token', accessToken);
+    localStorage.setItem('@marquei:user', JSON.stringify(user));
 
     setUser(user);
   }
 
   function logout() {
-    localStorage.removeItem(
-      '@marquei:token',
-    );
-
-    localStorage.removeItem(
-      '@marquei:user',
-    );
-
-    delete api.defaults.headers.common
-      .Authorization;
+    localStorage.removeItem('@marquei:token');
+    localStorage.removeItem('@marquei:user');
 
     setUser(null);
 
@@ -123,9 +70,9 @@ export function AuthProvider({
     <AuthContext.Provider
       value={{
         user,
+        loading,
         signIn,
         logout,
-        loading,
       }}
     >
       {children}
