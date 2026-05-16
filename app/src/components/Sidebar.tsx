@@ -71,6 +71,13 @@ export function Sidebar() {
       icon: CalendarDays,
       roles: ["CLIENTE"],
     },
+
+    {
+      href: "/clients",
+      label: "Clientes",
+      icon: Users,
+      roles: ["GESTOR"],
+    },
   ];
 
   const roleLabels: Record<Role, string> = {
