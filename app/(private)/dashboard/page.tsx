@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { startTransition, useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
 import { useAuth } from '@/app/src/hooks/useAuth';
 import { getDashboardMetrics } from '@/app/src/services/dashboard';
@@ -11,6 +12,7 @@ export default function DashboardPage() {
 
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
   const [loading, setLoading] = useState(true);
+  const [filtering, setFiltering] = useState(false);
 
   const [startDate, setStartDate] = useState('2026-05-01');
   const [endDate, setEndDate] = useState('2026-05-31');
@@ -18,8 +20,19 @@ export default function DashboardPage() {
   async function loadMetrics() {
     if (!user) return;
 
+    if (!startDate || !endDate) {
+      toast.error('Selecione data inicial e data final.');
+      return;
+    }
+
+    if (startDate > endDate) {
+      toast.error('A data inicial não pode ser maior que a data final.');
+      return;
+    }
+
     try {
       setLoading(true);
+      setFiltering(true);
 
       const data = await getDashboardMetrics({
         startDate,
@@ -27,14 +40,21 @@ export default function DashboardPage() {
       });
 
       setMetrics(data);
+      toast.success('Indicadores carregados com sucesso.');
+    } catch (error) {
+      console.error(error);
+      toast.error('Erro ao carregar indicadores.');
     } finally {
       setLoading(false);
+      setFiltering(false);
     }
   }
 
   useEffect(() => {
     if (!authLoading && user) {
-      loadMetrics();
+      startTransition(() => {
+        loadMetrics();
+      });
     }
   }, [authLoading, user]);
 
@@ -67,9 +87,10 @@ export default function DashboardPage() {
           <button
             type="button"
             onClick={loadMetrics}
-            className="h-11 rounded-xl bg-black px-5 text-white"
+            disabled={filtering}
+            className="h-11 rounded-xl bg-black px-5 text-white disabled:opacity-50"
           >
-            Filtrar
+            {filtering ? 'Filtrando...' : 'Filtrar'}
           </button>
         </div>
       </div>
@@ -136,9 +157,11 @@ export default function DashboardPage() {
                 ))}
               </div>
             ) : (
-              <p className="text-zinc-400">
-                Nenhum dado encontrado no período.
-              </p>
+              <div className="rounded-xl border border-dashed border-zinc-300 p-6 text-center">
+                <p className="text-sm text-zinc-400">
+                  Nenhum dado encontrado no período.
+                </p>
+              </div>
             )}
           </div>
         </>

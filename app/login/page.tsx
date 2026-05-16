@@ -4,6 +4,7 @@ import { useState } from 'react';
 
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../src/hooks/useAuth';
+import { toast } from 'sonner';
 
 
 export default function LoginPage() {
@@ -32,7 +33,7 @@ export default function LoginPage() {
 
       router.push('/dashboard');
     } catch {
-      alert('Credenciais inválidas');
+      toast.error('Erro ao carregar profissionais.');
     } finally {
       setLoading(false);
     }

@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { startTransition, useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
 import { useAuth } from '@/app/src/hooks/useAuth';
 
@@ -12,69 +13,77 @@ import {
 import { Service } from '@/app/src/types/service';
 
 export default function ServicesPage() {
-  const { loading: authLoading } =
-    useAuth();
+  const { user, loading: authLoading } = useAuth();
 
-  const [services, setServices] =
-    useState<Service[]>([]);
+  const [services, setServices] = useState<Service[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [creating, setCreating] = useState(false);
 
-  const [loading, setLoading] =
-    useState(true);
-
-  const [name, setName] =
-    useState('');
-
-  const [duration, setDuration] =
-    useState('');
-
-  const [price, setPrice] =
-    useState('');
+  const [name, setName] = useState('');
+  const [duration, setDuration] = useState('');
+  const [price, setPrice] = useState('');
 
   async function loadServices() {
+    if (!user) return;
+
     try {
-      const data =
-        await getServices();
+      setLoading(true);
+
+      const data = await getServices();
 
       setServices(data);
+    } catch (error) {
+      console.error(error);
+      toast.error('Erro ao carregar serviços.');
     } finally {
       setLoading(false);
     }
   }
 
-  async function handleCreateService(
-    e: React.FormEvent,
-  ) {
+  async function handleCreateService(e: React.FormEvent) {
     e.preventDefault();
 
-    const service =
-      await createService({
+    if (!name || !duration || !price) {
+      toast.error('Preencha nome, duração e preço.');
+      return;
+    }
+
+    try {
+      setCreating(true);
+
+      const service = await createService({
         name,
         duration: Number(duration),
         price: Number(price),
       });
 
-    setServices((state) => [
-      service,
-      ...state,
-    ]);
+      setServices((state) => [service, ...state]);
 
-    setName('');
-    setDuration('');
-    setPrice('');
+      setName('');
+      setDuration('');
+      setPrice('');
+
+      toast.success('Serviço criado com sucesso.');
+    } catch (error) {
+      console.error(error);
+      toast.error('Erro ao criar serviço.');
+    } finally {
+      setCreating(false);
+    }
   }
 
   useEffect(() => {
-    if (!authLoading) {
-      loadServices();
+    if (!authLoading && user) {
+      startTransition(() => {
+        loadServices();
+      });
     }
-  }, [authLoading]);
+  }, [authLoading, user]);
 
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold">
-          Serviços
-        </h1>
+        <h1 className="text-3xl font-bold">Serviços</h1>
 
         <p className="text-zinc-500">
           Gerencie os serviços do salão
@@ -82,9 +91,7 @@ export default function ServicesPage() {
       </div>
 
       <form
-        onSubmit={
-          handleCreateService
-        }
+        onSubmit={handleCreateService}
         className="bg-white rounded-2xl p-6 shadow-sm flex gap-4"
       >
         <input
@@ -92,9 +99,7 @@ export default function ServicesPage() {
           placeholder="Nome"
           className="h-12 border rounded-xl px-4 flex-1"
           value={name}
-          onChange={(e) =>
-            setName(e.target.value)
-          }
+          onChange={(e) => setName(e.target.value)}
         />
 
         <input
@@ -102,11 +107,7 @@ export default function ServicesPage() {
           placeholder="Duração"
           className="h-12 border rounded-xl px-4 w-40"
           value={duration}
-          onChange={(e) =>
-            setDuration(
-              e.target.value,
-            )
-          }
+          onChange={(e) => setDuration(e.target.value)}
         />
 
         <input
@@ -114,68 +115,53 @@ export default function ServicesPage() {
           placeholder="Preço"
           className="h-12 border rounded-xl px-4 w-40"
           value={price}
-          onChange={(e) =>
-            setPrice(e.target.value)
-          }
+          onChange={(e) => setPrice(e.target.value)}
         />
 
         <button
           type="submit"
-          className="h-12 px-6 rounded-xl bg-black text-white font-medium"
+          disabled={creating}
+          className="h-12 px-6 rounded-xl bg-black text-white font-medium disabled:opacity-50"
         >
-          Criar
+          {creating ? 'Criando...' : 'Criar'}
         </button>
       </form>
 
       <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
         {loading ? (
-          <div className="p-6">
-            Carregando...
-          </div>
+          <div className="p-6">Carregando...</div>
         ) : (
           <table className="w-full">
             <thead className="bg-zinc-100 border-b">
               <tr>
-                <th className="text-left p-4">
-                  Serviço
-                </th>
-
-                <th className="text-left p-4">
-                  Duração
-                </th>
-
-                <th className="text-left p-4">
-                  Preço
-                </th>
+                <th className="text-left p-4">Serviço</th>
+                <th className="text-left p-4">Duração</th>
+                <th className="text-left p-4">Preço</th>
               </tr>
             </thead>
 
             <tbody>
-              {services.map(
-                (service) => (
-                  <tr
-                    key={service.id}
-                    className="border-b"
+              {services.map((service) => (
+                <tr key={service.id} className="border-b">
+                  <td className="p-4">{service.name}</td>
+
+                  <td className="p-4">{service.duration} min</td>
+
+                  <td className="p-4">
+                    R$ {Number(service.price).toFixed(2)}
+                  </td>
+                </tr>
+              ))}
+
+              {services.length === 0 && (
+                <tr>
+                  <td
+                    colSpan={3}
+                    className="p-6 text-center text-zinc-400"
                   >
-                    <td className="p-4">
-                      {service.name}
-                    </td>
-
-                    <td className="p-4">
-                      {
-                        service.duration
-                      }{' '}
-                      min
-                    </td>
-
-                    <td className="p-4">
-                      R${' '}
-                      {Number(
-                        service.price,
-                      ).toFixed(2)}
-                    </td>
-                  </tr>
-                ),
+                    Nenhum serviço cadastrado
+                  </td>
+                </tr>
               )}
             </tbody>
           </table>

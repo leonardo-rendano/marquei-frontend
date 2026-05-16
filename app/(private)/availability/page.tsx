@@ -1,12 +1,15 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { startTransition, useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
 import { useAuth } from '@/app/src/hooks/useAuth';
+
 import {
   createAvailability,
   getAvailability,
 } from '@/app/src/services/availability';
+
 import { getProfessionals } from '@/app/src/services/professionals';
 
 import { Availability } from '@/app/src/types/availability';
@@ -27,17 +30,29 @@ export default function AvailabilityPage() {
 
   const [items, setItems] = useState<Availability[]>([]);
   const [professionals, setProfessionals] = useState<Professional[]>([]);
+
   const [loading, setLoading] = useState(true);
+  const [creating, setCreating] = useState(false);
 
   const [professionalId, setProfessionalId] = useState('');
   const [weekDay, setWeekDay] = useState('');
   const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
 
+  function getProfessionalName(professionalId: string) {
+    const professional = professionals.find(
+      (item) => item.id === professionalId,
+    );
+
+    return professional?.user?.name ?? 'Profissional não encontrado';
+  }
+
   async function loadData() {
     if (!user) return;
 
     try {
+      setLoading(true);
+
       const [availabilityData, professionalsData] = await Promise.all([
         getAvailability(),
         getProfessionals(),
@@ -45,6 +60,9 @@ export default function AvailabilityPage() {
 
       setItems(availabilityData);
       setProfessionals(professionalsData);
+    } catch (error) {
+      console.error(error);
+      toast.error('Erro ao carregar disponibilidades.');
     } finally {
       setLoading(false);
     }
@@ -53,24 +71,47 @@ export default function AvailabilityPage() {
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
 
-    const availability = await createAvailability({
-      professionalId,
-      weekDay: Number(weekDay),
-      startTime,
-      endTime,
-    });
+    if (!professionalId || !weekDay || !startTime || !endTime) {
+      toast.error('Preencha profissional, dia e horários.');
+      return;
+    }
 
-    setItems((state) => [availability, ...state]);
+    if (startTime >= endTime) {
+      toast.error('O horário inicial deve ser menor que o horário final.');
+      return;
+    }
 
-    setProfessionalId('');
-    setWeekDay('');
-    setStartTime('');
-    setEndTime('');
+    try {
+      setCreating(true);
+
+      const availability = await createAvailability({
+        professionalId,
+        weekDay: Number(weekDay),
+        startTime,
+        endTime,
+      });
+
+      setItems((state) => [availability, ...state]);
+
+      setProfessionalId('');
+      setWeekDay('');
+      setStartTime('');
+      setEndTime('');
+
+      toast.success('Disponibilidade criada com sucesso.');
+    } catch (error) {
+      console.error(error);
+      toast.error('Erro ao criar disponibilidade.');
+    } finally {
+      setCreating(false);
+    }
   }
 
   useEffect(() => {
     if (!authLoading && user) {
-      loadData();
+      startTransition(() => {
+        loadData();
+      });
     }
   }, [authLoading, user]);
 
@@ -78,6 +119,7 @@ export default function AvailabilityPage() {
     <div className="space-y-8">
       <div>
         <h1 className="text-3xl font-bold">Disponibilidade</h1>
+
         <p className="text-zinc-500">
           Configure a jornada semanal dos profissionais
         </p>
@@ -96,7 +138,7 @@ export default function AvailabilityPage() {
 
           {professionals.map((professional) => (
             <option key={professional.id} value={professional.id}>
-              {professional.user?.name}
+              {professional.user?.name ?? 'Profissional sem nome'}
             </option>
           ))}
         </select>
@@ -131,9 +173,10 @@ export default function AvailabilityPage() {
 
         <button
           type="submit"
-          className="h-12 rounded-xl bg-black text-white font-medium"
+          disabled={creating}
+          className="h-12 rounded-xl bg-black text-white font-medium disabled:opacity-50"
         >
-          Criar
+          {creating ? 'Criando...' : 'Criar'}
         </button>
       </form>
 
@@ -155,16 +198,30 @@ export default function AvailabilityPage() {
               {items.map((item) => (
                 <tr key={item.id} className="border-b">
                   <td className="p-4">
-                    {item.professional?.user?.name ?? item.professional?.user?.name}
+                    {item.professional?.user?.name ??
+                      getProfessionalName(item.professionalId)}
                   </td>
 
-                  <td className="p-4">{weekDays[item.weekDay]}</td>
+                  <td className="p-4">
+                    {weekDays[item.weekDay] ?? '-'}
+                  </td>
 
                   <td className="p-4">{item.startTime}</td>
 
                   <td className="p-4">{item.endTime}</td>
                 </tr>
               ))}
+
+              {items.length === 0 && (
+                <tr>
+                  <td
+                    colSpan={4}
+                    className="p-6 text-center text-zinc-400"
+                  >
+                    Nenhuma disponibilidade cadastrada
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         )}

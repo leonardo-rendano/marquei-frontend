@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { startTransition, useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
 import { useAuth } from '@/app/src/hooks/useAuth';
 
@@ -41,6 +42,8 @@ export default function ProfessionalsPage() {
     if (!user) return;
 
     try {
+      setLoading(true);
+
       const [professionalsData, servicesData, usersData] = await Promise.all([
         getProfessionals(),
         getServices(),
@@ -53,6 +56,9 @@ export default function ProfessionalsPage() {
       setUsers(
         usersData.filter((user: User) => user.role === 'PROFISSIONAL'),
       );
+    } catch (error) {
+      console.error(error);
+      toast.error('Erro ao carregar profissionais.');
     } finally {
       setLoading(false);
     }
@@ -62,21 +68,32 @@ export default function ProfessionalsPage() {
     e.preventDefault();
 
     if (!userId || !specialty) {
-      alert('Selecione um usuário e informe a especialidade.');
+      toast.error(
+        'Selecione um usuário e informe a especialidade.',
+      );
+
       return;
     }
 
-    const professional = await createProfessional({
-      userId,
-      specialty,
-      serviceIds: selectedServices,
-    });
+    try {
+      const professional = await createProfessional({
+        userId,
+        specialty,
+        serviceIds: selectedServices,
+      });
 
-    setProfessionals((state) => [professional, ...state]);
+      setProfessionals((state) => [professional, ...state]);
 
-    setUserId('');
-    setSpecialty('');
-    setSelectedServices([]);
+      setUserId('');
+      setSpecialty('');
+      setSelectedServices([]);
+
+      toast.success('Profissional criado com sucesso.');
+    } catch (error) {
+      console.error(error);
+
+      toast.error('Erro ao criar profissional.');
+    }
   }
 
   function toggleService(serviceId: string) {
@@ -88,17 +105,21 @@ export default function ProfessionalsPage() {
   }
 
   useEffect(() => {
-    if (!authLoading && user) {
+  if (!authLoading && user) {
+    startTransition(() => {
       loadData();
-    }
-  }, [authLoading, user]);
+    });
+  }
+}, [authLoading, user]);
 
   return (
     <div className="space-y-8">
       <div>
         <h1 className="text-3xl font-bold">Profissionais</h1>
 
-        <p className="text-zinc-500">Gerencie os profissionais</p>
+        <p className="text-zinc-500">
+          Gerencie os profissionais
+        </p>
       </div>
 
       <form
@@ -111,7 +132,9 @@ export default function ProfessionalsPage() {
             value={userId}
             onChange={(e) => setUserId(e.target.value)}
           >
-            <option value="">Selecione o profissional</option>
+            <option value="">
+              Selecione o profissional
+            </option>
 
             {users.map((user) => (
               <option key={user.id} value={user.id}>
@@ -165,11 +188,13 @@ export default function ProfessionalsPage() {
             >
               <div>
                 <h2 className="text-xl font-semibold">
-                  {professional.user?.name ?? 'Profissional sem nome'}
+                  {professional.user?.name ??
+                    'Profissional sem nome'}
                 </h2>
 
                 <p className="text-zinc-500">
-                  {professional.specialty || 'Sem especialidade'}
+                  {professional.specialty ||
+                    'Sem especialidade'}
                 </p>
               </div>
 
