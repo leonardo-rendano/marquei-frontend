@@ -1,45 +1,58 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
+import { useEffect, useState } from 'react';
 
-import { useAuth } from "@/app/src/hooks/useAuth";
+import { useAuth } from '@/app/src/hooks/useAuth';
 
 import {
   createProfessional,
   getProfessionals,
-} from "@/app/src/services/professionals";
+} from '@/app/src/services/professionals';
 
-import { getServices } from "@/app/src/services/services";
+import { getServices } from '@/app/src/services/services';
+import { getUsers } from '@/app/src/services/users';
 
-import { Service } from "@/app/src/types/service";
+import { Service } from '@/app/src/types/service';
+import { Professional } from '@/app/src/types/professionals';
 
-import { Professional } from "@/app/src/types/professionals";
+type UserRole = 'GESTOR' | 'PROFISSIONAL' | 'CLIENTE';
+
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+}
 
 export default function ProfessionalsPage() {
-  const { loading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
 
   const [professionals, setProfessionals] = useState<Professional[]>([]);
-
   const [services, setServices] = useState<Service[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
 
   const [loading, setLoading] = useState(true);
 
-  const [userId, setUserId] = useState("");
-
-  const [specialty, setSpecialty] = useState("");
-
+  const [userId, setUserId] = useState('');
+  const [specialty, setSpecialty] = useState('');
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
 
   async function loadData() {
+    if (!user) return;
+
     try {
-      const [professionalsData, servicesData] = await Promise.all([
+      const [professionalsData, servicesData, usersData] = await Promise.all([
         getProfessionals(),
         getServices(),
+        getUsers(),
       ]);
 
       setProfessionals(professionalsData);
-
       setServices(servicesData);
+
+      setUsers(
+        usersData.filter((user: User) => user.role === 'PROFISSIONAL'),
+      );
     } finally {
       setLoading(false);
     }
@@ -47,6 +60,11 @@ export default function ProfessionalsPage() {
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
+
+    if (!userId || !specialty) {
+      alert('Selecione um usuário e informe a especialidade.');
+      return;
+    }
 
     const professional = await createProfessional({
       userId,
@@ -56,8 +74,8 @@ export default function ProfessionalsPage() {
 
     setProfessionals((state) => [professional, ...state]);
 
-    setUserId("");
-    setSpecialty("");
+    setUserId('');
+    setSpecialty('');
     setSelectedServices([]);
   }
 
@@ -70,10 +88,10 @@ export default function ProfessionalsPage() {
   }
 
   useEffect(() => {
-    if (!authLoading) {
+    if (!authLoading && user) {
       loadData();
     }
-  }, [authLoading]);
+  }, [authLoading, user]);
 
   return (
     <div className="space-y-8">
@@ -88,13 +106,19 @@ export default function ProfessionalsPage() {
         className="bg-white rounded-2xl p-6 shadow-sm space-y-4"
       >
         <div className="grid grid-cols-2 gap-4">
-          <input
-            type="text"
-            placeholder="User ID"
+          <select
             className="h-12 border rounded-xl px-4"
             value={userId}
             onChange={(e) => setUserId(e.target.value)}
-          />
+          >
+            <option value="">Selecione o profissional</option>
+
+            {users.map((user) => (
+              <option key={user.id} value={user.id}>
+                {user.name} — {user.email}
+              </option>
+            ))}
+          </select>
 
           <input
             type="text"
@@ -113,8 +137,8 @@ export default function ProfessionalsPage() {
               onClick={() => toggleService(service.id)}
               className={`px-4 py-2 rounded-xl border ${
                 selectedServices.includes(service.id)
-                  ? "bg-black text-white"
-                  : "bg-white"
+                  ? 'bg-black text-white'
+                  : 'bg-white'
               }`}
             >
               {service.name}
@@ -141,10 +165,12 @@ export default function ProfessionalsPage() {
             >
               <div>
                 <h2 className="text-xl font-semibold">
-                  {professional.user.name}
+                  {professional.user?.name ?? 'Profissional sem nome'}
                 </h2>
 
-                <p className="text-zinc-500">{professional.specialty}</p>
+                <p className="text-zinc-500">
+                  {professional.specialty || 'Sem especialidade'}
+                </p>
               </div>
 
               <div className="flex flex-wrap gap-2">

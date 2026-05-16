@@ -33,6 +33,18 @@ export function Sidebar() {
       href: "/appointments",
       label: "Agendamentos",
     },
+
+    {
+      href: "/availability",
+      label: "Disponibilidade",
+      roles: ["GESTOR"],
+    },
+
+    {
+      href: "/users",
+      label: "Usuários",
+      roles: ["GESTOR"],
+    },
   ];
 
   return (
