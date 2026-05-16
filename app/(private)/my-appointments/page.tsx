@@ -7,43 +7,36 @@ import { useAuth } from "@/app/src/hooks/useAuth";
 
 import {
   cancelAppointment,
-  completeAppointment,
   createAppointment,
-  getAppointments,
   getAvailableSlots,
+  getMyClientAppointments,
 } from "@/app/src/services/appointments";
 
 import { getProfessionals } from "@/app/src/services/professionals";
 import { getServices } from "@/app/src/services/services";
-import { getUsers } from "@/app/src/services/users";
 
 import { RoleGuard } from "@/app/src/components/RoleGuard";
 import { Appointment } from "@/app/src/types/appointments";
 import { Professional } from "@/app/src/types/professionals";
 import { Service } from "@/app/src/types/service";
-import { User } from "@/app/src/types/user";
 
-export default function AppointmentsPage() {
+export default function MyAppointmentsPage() {
   const { user, loading: authLoading } = useAuth();
 
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [professionals, setProfessionals] = useState<Professional[]>([]);
   const [services, setServices] = useState<Service[]>([]);
-  const [clients, setClients] = useState<User[]>([]);
   const [slots, setSlots] = useState<string[]>([]);
 
   const [loading, setLoading] = useState(true);
-  const [clientId, setClientId] = useState("");
+  const [loadingSlots, setLoadingSlots] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
+
   const [professionalId, setProfessionalId] = useState("");
   const [serviceId, setServiceId] = useState("");
   const [date, setDate] = useState("");
   const [selectedSlot, setSelectedSlot] = useState("");
-
-  const [creating, setCreating] = useState(false);
-  const [loadingSlots, setLoadingSlots] = useState(false);
-  const [updatingAppointmentId, setUpdatingAppointmentId] = useState<
-    string | null
-  >(null);
 
   async function loadData() {
     if (!user) return;
@@ -51,21 +44,19 @@ export default function AppointmentsPage() {
     try {
       setLoading(true);
 
-      const [appointmentsData, professionalsData, servicesData, usersData] =
+      const [appointmentsData, professionalsData, servicesData] =
         await Promise.all([
-          getAppointments(),
+          getMyClientAppointments(),
           getProfessionals(),
           getServices(),
-          getUsers(),
         ]);
 
       setAppointments(appointmentsData);
       setProfessionals(professionalsData);
       setServices(servicesData);
-      setClients(usersData.filter((item: User) => item.role === "CLIENTE"));
     } catch (error) {
       console.error(error);
-      toast.error("Erro ao carregar dados de agendamentos.");
+      toast.error("Erro ao carregar seus agendamentos.");
     } finally {
       setLoading(false);
     }
@@ -86,7 +77,7 @@ export default function AppointmentsPage() {
       setSelectedSlot("");
 
       if (data.length === 0) {
-        toast.info("Nenhum horário disponível para os filtros selecionados.");
+        toast.info("Nenhum horário disponível para essa data.");
       } else {
         toast.success("Horários carregados com sucesso.");
       }
@@ -101,7 +92,9 @@ export default function AppointmentsPage() {
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
 
-    if (!clientId || !professionalId || !serviceId || !date || !selectedSlot) {
+    if (!user) return;
+
+    if (!professionalId || !serviceId || !date || !selectedSlot) {
       toast.error("Preencha todos os campos e selecione um horário.");
       return;
     }
@@ -110,7 +103,7 @@ export default function AppointmentsPage() {
       setCreating(true);
 
       const appointment = await createAppointment({
-        clientId,
+        clientId: user.id,
         professionalId,
         serviceId,
         startAt: `${date}T${selectedSlot}:00`,
@@ -118,7 +111,6 @@ export default function AppointmentsPage() {
 
       setAppointments((state) => [appointment, ...state]);
 
-      setClientId("");
       setProfessionalId("");
       setServiceId("");
       setDate("");
@@ -136,7 +128,7 @@ export default function AppointmentsPage() {
 
   async function handleCancel(id: string) {
     try {
-      setUpdatingAppointmentId(id);
+      setCancellingId(id);
 
       const updated = await cancelAppointment(id);
 
@@ -146,43 +138,14 @@ export default function AppointmentsPage() {
         ),
       );
 
-      toast.success("Agendamento cancelado.");
+      toast.success("Agendamento cancelado com sucesso.");
     } catch (error) {
       console.error(error);
       toast.error("Erro ao cancelar agendamento.");
     } finally {
-      setUpdatingAppointmentId(null);
+      setCancellingId(null);
     }
   }
-
-  async function handleComplete(id: string) {
-    try {
-      setUpdatingAppointmentId(id);
-
-      const updated = await completeAppointment(id);
-
-      setAppointments((state) =>
-        state.map((appointment) =>
-          appointment.id === id ? updated : appointment,
-        ),
-      );
-
-      toast.success("Atendimento concluído.");
-    } catch (error) {
-      console.error(error);
-      toast.error("Erro ao concluir atendimento.");
-    } finally {
-      setUpdatingAppointmentId(null);
-    }
-  }
-
-  useEffect(() => {
-    if (!authLoading && user) {
-      startTransition(() => {
-        loadData();
-      });
-    }
-  }, [authLoading, user]);
 
   function getStatusBadge(status: string) {
     const styles: Record<string, string> = {
@@ -210,14 +173,21 @@ export default function AppointmentsPage() {
     );
   }
 
+  useEffect(() => {
+    if (!authLoading && user) {
+      startTransition(() => {
+        loadData();
+      });
+    }
+  }, [authLoading, user]);
+
   return (
-    <RoleGuard allowedRoles={["GESTOR", "PROFISSIONAL"]}>
+    <RoleGuard allowedRoles={["CLIENTE"]}>
       <div className="space-y-8">
         <div>
-          <h1 className="text-3xl font-bold">Agendamentos</h1>
-          <p className="text-zinc-500">
-            Gerencie os agendamentos da plataforma
-          </p>
+          <h1 className="text-3xl font-bold">Meus agendamentos</h1>
+
+          <p className="text-zinc-500">Agende e acompanhe seus horários</p>
         </div>
 
         <form
@@ -225,20 +195,6 @@ export default function AppointmentsPage() {
           className="bg-white rounded-2xl p-6 shadow-sm space-y-4"
         >
           <div className="grid grid-cols-2 gap-4">
-            <select
-              className="h-12 border rounded-xl px-4"
-              value={clientId}
-              onChange={(e) => setClientId(e.target.value)}
-            >
-              <option value="">Selecione o cliente</option>
-
-              {clients.map((client) => (
-                <option key={client.id} value={client.id}>
-                  {client.name} — {client.email}
-                </option>
-              ))}
-            </select>
-
             <select
               className="h-12 border rounded-xl px-4"
               value={professionalId}
@@ -343,9 +299,8 @@ export default function AppointmentsPage() {
             <table className="w-full">
               <thead className="bg-zinc-100 border-b">
                 <tr>
-                  <th className="text-left p-4">Cliente</th>
-                  <th className="text-left p-4">Profissional</th>
                   <th className="text-left p-4">Serviço</th>
+                  <th className="text-left p-4">Profissional</th>
                   <th className="text-left p-4">Data</th>
                   <th className="text-left p-4">Status</th>
                   <th className="text-right p-4">Ações</th>
@@ -355,13 +310,11 @@ export default function AppointmentsPage() {
               <tbody>
                 {appointments.map((appointment) => (
                   <tr key={appointment.id} className="border-b">
-                    <td className="p-4">{appointment.client?.name ?? "-"}</td>
+                    <td className="p-4">{appointment.service?.name ?? "-"}</td>
 
                     <td className="p-4">
                       {appointment.professional?.user?.name ?? "-"}
                     </td>
-
-                    <td className="p-4">{appointment.service?.name ?? "-"}</td>
 
                     <td className="p-4">
                       {new Date(appointment.startAt).toLocaleString("pt-BR")}
@@ -373,26 +326,15 @@ export default function AppointmentsPage() {
 
                     <td className="p-4">
                       {appointment.status === "CONFIRMED" ? (
-                        <div className="flex justify-end gap-2">
+                        <div className="flex justify-end">
                           <button
                             type="button"
-                            disabled={updatingAppointmentId === appointment.id}
-                            onClick={() => handleComplete(appointment.id)}
-                            className="px-3 py-2 rounded-lg bg-green-600 text-white text-sm disabled:opacity-50"
-                          >
-                            {updatingAppointmentId === appointment.id
-                              ? "Atualizando..."
-                              : "Concluir"}
-                          </button>
-
-                          <button
-                            type="button"
-                            disabled={updatingAppointmentId === appointment.id}
+                            disabled={cancellingId === appointment.id}
                             onClick={() => handleCancel(appointment.id)}
                             className="px-3 py-2 rounded-lg bg-red-600 text-white text-sm disabled:opacity-50"
                           >
-                            {updatingAppointmentId === appointment.id
-                              ? "Atualizando..."
+                            {cancellingId === appointment.id
+                              ? "Cancelando..."
                               : "Cancelar"}
                           </button>
                         </div>
@@ -407,7 +349,7 @@ export default function AppointmentsPage() {
 
                 {appointments.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="p-6 text-center text-zinc-400">
+                    <td colSpan={5} className="p-6 text-center text-zinc-400">
                       Nenhum agendamento encontrado
                     </td>
                   </tr>

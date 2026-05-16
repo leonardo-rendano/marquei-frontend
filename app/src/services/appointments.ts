@@ -1,7 +1,7 @@
-import { api } from './api';
+import { api } from "./api";
 
 export async function getAppointments() {
-  const response = await api.get('/appointments');
+  const response = await api.get("/appointments");
   return response.data;
 }
 
@@ -11,7 +11,7 @@ export async function createAppointment(data: {
   serviceId: string;
   startAt: string;
 }) {
-  const response = await api.post('/appointments', data);
+  const response = await api.post("/appointments", data);
   return response.data;
 }
 
@@ -37,5 +37,22 @@ export async function cancelAppointment(id: string) {
 
 export async function completeAppointment(id: string) {
   const response = await api.patch(`/appointments/${id}/complete`);
+  return response.data;
+}
+
+export async function getMyProfessionalSchedule() {
+  const response = await api.get("/appointments/professional/me");
+
+  return response.data;
+}
+
+export async function markAppointmentAsNoShow(id: string) {
+  const response = await api.patch(`/appointments/${id}/no-show`);
+
+  return response.data;
+}
+export async function getMyClientAppointments() {
+  const response = await api.get("/appointments/client/me");
+
   return response.data;
 }
