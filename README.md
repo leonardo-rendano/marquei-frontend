@@ -1,37 +1,130 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Marquei Web
 
-## Getting Started
+Frontend do sistema de agendamento para salões, com perfis de gestor, profissional e cliente.
 
-First, run the development server:
+---
+
+## Stack utilizada
+
+- Next.js
+- React
+- TypeScript
+- Tailwind CSS
+- Axios
+- Sonner
+- Lucide React
+
+A stack foi escolhida por permitir o desenvolvimento de interfaces modernas, performáticas e organizadas. O Next.js facilita a estruturação da aplicação e o roteamento, enquanto o TypeScript melhora a segurança e manutenção do código. O Tailwind CSS foi utilizado para acelerar a construção da interface mantendo consistência visual.
+
+---
+
+## Como rodar o projeto localmente
+
+### 1. Clone o repositório
+
+```bash
+git clone https://github.com/leonardo-rendano/marquei-frontend.git
+cd marquei-frontend
+```
+
+---
+
+## Instale as dependências
+
+```bash
+npm install
+```
+
+---
+
+## Configure as variáveis de ambiente
+
+Crie o arquivo `.env.local` baseado no `.env.example`:
+
+```bash
+cp .env.example .env.local
+```
+
+---
+
+## Rode o projeto
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+A aplicação ficará disponível em:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```txt
+http://localhost:3000
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+---
 
-## Learn More
+## Variáveis de ambiente
 
-To learn more about Next.js, take a look at the following resources:
+### `.env.example`
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```env
+NEXT_PUBLIC_API_URL="http://localhost:3333"
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
+## Credenciais de teste
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+As credenciais podem ser criadas manualmente pela interface ou via postman/insomnia no backend.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-# marquei-frontend
+### Gestor
+
+```txt
+E-mail: gestor@marquei.com
+Senha: 123456
+```
+
+### Profissional
+
+```txt
+E-mail: profissional@marquei.com
+Senha: 123456
+```
+
+### Cliente
+
+```txt
+E-mail: cliente@marquei.com
+Senha: 123456
+```
+
+---
+
+## Decisões de arquitetura
+
+A aplicação foi organizada por rotas privadas e componentes reutilizáveis. O controle de autenticação é feito via Context API, com persistência do token no navegador e integração com Axios para envio automático do JWT nas requisições.
+
+As permissões por perfil são tratadas através de um `RoleGuard`, permitindo renderização condicional de páginas e funcionalidades para gestor, profissional e cliente.
+
+---
+
+## O que ficou de fora
+
+Algumas funcionalidades ficaram fora do escopo inicial:
+
+- edição de registros;
+- exclusão de registros;
+- calendário visual;
+- paginação;
+- filtros avançados;
+- notificações;
+- recuperação de senha;
+- testes automatizados;
+- responsividade mobile refinada;
+- deploy em produção.
+
+---
+
+## O que eu faria diferente com mais tempo
+
+Com mais tempo, eu adicionaria testes automatizados, melhoraria a experiência mobile e implementaria um calendário visual para facilitar a gestão dos horários. Também adicionaria filtros, paginação e edição de registros.
+
+Outra melhoria importante seria evoluir o sistema de permissões e adicionar tratamento global de erros, loading states mais refinados e maior componentização da interface.
