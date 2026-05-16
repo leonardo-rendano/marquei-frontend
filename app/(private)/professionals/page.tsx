@@ -1,23 +1,28 @@
-"use client";
+'use client';
 
-import { startTransition, useEffect, useState } from "react";
-import { toast } from "sonner";
+import {
+  startTransition,
+  useCallback,
+  useEffect,
+  useState,
+} from 'react';
+import { toast } from 'sonner';
 
-import { useAuth } from "@/app/src/hooks/useAuth";
+import { RoleGuard } from '@/app/src/components/RoleGuard';
+import { useAuth } from '@/app/src/hooks/useAuth';
 
 import {
   createProfessional,
   getProfessionals,
-} from "@/app/src/services/professionals";
+} from '@/app/src/services/professionals';
 
-import { getServices } from "@/app/src/services/services";
-import { getUsers } from "@/app/src/services/users";
+import { getServices } from '@/app/src/services/services';
+import { getUsers } from '@/app/src/services/users';
 
-import { RoleGuard } from "@/app/src/components/RoleGuard";
-import { Professional } from "@/app/src/types/professionals";
-import { Service } from "@/app/src/types/service";
+import { Professional } from '@/app/src/types/professionals';
+import { Service } from '@/app/src/types/service';
 
-type UserRole = "GESTOR" | "PROFISSIONAL" | "CLIENTE";
+type UserRole = 'GESTOR' | 'PROFISSIONAL' | 'CLIENTE';
 
 interface User {
   id: string;
@@ -35,11 +40,11 @@ export default function ProfessionalsPage() {
 
   const [loading, setLoading] = useState(true);
 
-  const [userId, setUserId] = useState("");
-  const [specialty, setSpecialty] = useState("");
+  const [userId, setUserId] = useState('');
+  const [specialty, setSpecialty] = useState('');
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
 
-  async function loadData() {
+  const loadData = useCallback(async () => {
     if (!user) return;
 
     try {
@@ -54,21 +59,22 @@ export default function ProfessionalsPage() {
       setProfessionals(professionalsData);
       setServices(servicesData);
 
-      setUsers(usersData.filter((user: User) => user.role === "PROFISSIONAL"));
+      setUsers(
+        usersData.filter((user: User) => user.role === 'PROFISSIONAL'),
+      );
     } catch (error) {
       console.error(error);
-      toast.error("Erro ao carregar profissionais.");
+      toast.error('Erro ao carregar profissionais.');
     } finally {
       setLoading(false);
     }
-  }
+  }, [user]);
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
 
     if (!userId || !specialty) {
-      toast.error("Selecione um usuário e informe a especialidade.");
-
+      toast.error('Selecione um usuário e informe a especialidade.');
       return;
     }
 
@@ -81,15 +87,14 @@ export default function ProfessionalsPage() {
 
       setProfessionals((state) => [professional, ...state]);
 
-      setUserId("");
-      setSpecialty("");
+      setUserId('');
+      setSpecialty('');
       setSelectedServices([]);
 
-      toast.success("Profissional criado com sucesso.");
+      toast.success('Profissional criado com sucesso.');
     } catch (error) {
       console.error(error);
-
-      toast.error("Erro ao criar profissional.");
+      toast.error('Erro ao criar profissional.');
     }
   }
 
@@ -107,10 +112,10 @@ export default function ProfessionalsPage() {
         loadData();
       });
     }
-  }, [authLoading, user]);
+  }, [authLoading, user, loadData]);
 
   return (
-    <RoleGuard allowedRoles={["GESTOR"]}>
+    <RoleGuard allowedRoles={['GESTOR']}>
       <div className="space-y-8">
         <div>
           <h1 className="text-3xl font-bold">Profissionais</h1>
@@ -154,8 +159,8 @@ export default function ProfessionalsPage() {
                 onClick={() => toggleService(service.id)}
                 className={`px-4 py-2 rounded-xl border ${
                   selectedServices.includes(service.id)
-                    ? "bg-black text-white"
-                    : "bg-white"
+                    ? 'bg-black text-white'
+                    : 'bg-white'
                 }`}
               >
                 {service.name}
@@ -182,11 +187,11 @@ export default function ProfessionalsPage() {
               >
                 <div>
                   <h2 className="text-xl font-semibold">
-                    {professional.user?.name ?? "Profissional sem nome"}
+                    {professional.user?.name ?? 'Profissional sem nome'}
                   </h2>
 
                   <p className="text-zinc-500">
-                    {professional.specialty || "Sem especialidade"}
+                    {professional.specialty || 'Sem especialidade'}
                   </p>
                 </div>
 

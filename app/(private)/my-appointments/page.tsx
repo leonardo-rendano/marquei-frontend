@@ -1,8 +1,9 @@
 "use client";
 
-import { startTransition, useEffect, useState } from "react";
+import { startTransition, useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
+import { RoleGuard } from "@/app/src/components/RoleGuard";
 import { useAuth } from "@/app/src/hooks/useAuth";
 
 import {
@@ -15,7 +16,6 @@ import {
 import { getProfessionals } from "@/app/src/services/professionals";
 import { getServices } from "@/app/src/services/services";
 
-import { RoleGuard } from "@/app/src/components/RoleGuard";
 import { Appointment } from "@/app/src/types/appointments";
 import { Professional } from "@/app/src/types/professionals";
 import { Service } from "@/app/src/types/service";
@@ -38,7 +38,7 @@ export default function MyAppointmentsPage() {
   const [date, setDate] = useState("");
   const [selectedSlot, setSelectedSlot] = useState("");
 
-  async function loadData() {
+  const loadData = useCallback(async () => {
     if (!user) return;
 
     try {
@@ -60,7 +60,7 @@ export default function MyAppointmentsPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [user]);
 
   async function loadSlots() {
     if (!professionalId || !serviceId || !date) {
@@ -179,7 +179,7 @@ export default function MyAppointmentsPage() {
         loadData();
       });
     }
-  }, [authLoading, user]);
+  }, [authLoading, user, loadData]);
 
   return (
     <RoleGuard allowedRoles={["CLIENTE"]}>

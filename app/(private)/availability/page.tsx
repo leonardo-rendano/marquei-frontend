@@ -1,29 +1,34 @@
-"use client";
+'use client';
 
-import { startTransition, useEffect, useState } from "react";
-import { toast } from "sonner";
+import {
+  startTransition,
+  useCallback,
+  useEffect,
+  useState,
+} from 'react';
+import { toast } from 'sonner';
 
-import { useAuth } from "@/app/src/hooks/useAuth";
+import { RoleGuard } from '@/app/src/components/RoleGuard';
+import { useAuth } from '@/app/src/hooks/useAuth';
 
 import {
   createAvailability,
   getAvailability,
-} from "@/app/src/services/availability";
+} from '@/app/src/services/availability';
 
-import { getProfessionals } from "@/app/src/services/professionals";
+import { getProfessionals } from '@/app/src/services/professionals';
 
-import { Availability } from "@/app/src/types/availability";
-import { Professional } from "@/app/src/types/professionals";
-import { RoleGuard } from "@/app/src/components/RoleGuard";
+import { Availability } from '@/app/src/types/availability';
+import { Professional } from '@/app/src/types/professionals';
 
 const weekDays = [
-  "Domingo",
-  "Segunda",
-  "Terça",
-  "Quarta",
-  "Quinta",
-  "Sexta",
-  "Sábado",
+  'Domingo',
+  'Segunda',
+  'Terça',
+  'Quarta',
+  'Quinta',
+  'Sexta',
+  'Sábado',
 ];
 
 export default function AvailabilityPage() {
@@ -35,20 +40,20 @@ export default function AvailabilityPage() {
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
 
-  const [professionalId, setProfessionalId] = useState("");
-  const [weekDay, setWeekDay] = useState("");
-  const [startTime, setStartTime] = useState("");
-  const [endTime, setEndTime] = useState("");
+  const [professionalId, setProfessionalId] = useState('');
+  const [weekDay, setWeekDay] = useState('');
+  const [startTime, setStartTime] = useState('');
+  const [endTime, setEndTime] = useState('');
 
   function getProfessionalName(professionalId: string) {
     const professional = professionals.find(
       (item) => item.id === professionalId,
     );
 
-    return professional?.user?.name ?? "Profissional não encontrado";
+    return professional?.user?.name ?? 'Profissional não encontrado';
   }
 
-  async function loadData() {
+  const loadData = useCallback(async () => {
     if (!user) return;
 
     try {
@@ -63,22 +68,22 @@ export default function AvailabilityPage() {
       setProfessionals(professionalsData);
     } catch (error) {
       console.error(error);
-      toast.error("Erro ao carregar disponibilidades.");
+      toast.error('Erro ao carregar disponibilidades.');
     } finally {
       setLoading(false);
     }
-  }
+  }, [user]);
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
 
     if (!professionalId || !weekDay || !startTime || !endTime) {
-      toast.error("Preencha profissional, dia e horários.");
+      toast.error('Preencha profissional, dia e horários.');
       return;
     }
 
     if (startTime >= endTime) {
-      toast.error("O horário inicial deve ser menor que o horário final.");
+      toast.error('O horário inicial deve ser menor que o horário final.');
       return;
     }
 
@@ -94,15 +99,15 @@ export default function AvailabilityPage() {
 
       setItems((state) => [availability, ...state]);
 
-      setProfessionalId("");
-      setWeekDay("");
-      setStartTime("");
-      setEndTime("");
+      setProfessionalId('');
+      setWeekDay('');
+      setStartTime('');
+      setEndTime('');
 
-      toast.success("Disponibilidade criada com sucesso.");
+      toast.success('Disponibilidade criada com sucesso.');
     } catch (error) {
       console.error(error);
-      toast.error("Erro ao criar disponibilidade.");
+      toast.error('Erro ao criar disponibilidade.');
     } finally {
       setCreating(false);
     }
@@ -114,10 +119,10 @@ export default function AvailabilityPage() {
         loadData();
       });
     }
-  }, [authLoading, user]);
+  }, [authLoading, user, loadData]);
 
   return (
-    <RoleGuard allowedRoles={["GESTOR"]}>
+    <RoleGuard allowedRoles={['GESTOR']}>
       <div className="space-y-8">
         <div>
           <h1 className="text-3xl font-bold">Disponibilidade</h1>
@@ -140,7 +145,7 @@ export default function AvailabilityPage() {
 
             {professionals.map((professional) => (
               <option key={professional.id} value={professional.id}>
-                {professional.user?.name ?? "Profissional sem nome"}
+                {professional.user?.name ?? 'Profissional sem nome'}
               </option>
             ))}
           </select>
@@ -178,7 +183,7 @@ export default function AvailabilityPage() {
             disabled={creating}
             className="h-12 rounded-xl bg-black text-white font-medium disabled:opacity-50"
           >
-            {creating ? "Criando..." : "Criar"}
+            {creating ? 'Criando...' : 'Criar'}
           </button>
         </form>
 
@@ -204,7 +209,7 @@ export default function AvailabilityPage() {
                         getProfessionalName(item.professionalId)}
                     </td>
 
-                    <td className="p-4">{weekDays[item.weekDay] ?? "-"}</td>
+                    <td className="p-4">{weekDays[item.weekDay] ?? '-'}</td>
 
                     <td className="p-4">{item.startTime}</td>
 

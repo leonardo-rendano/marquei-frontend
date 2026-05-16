@@ -1,21 +1,26 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { startTransition, useEffect, useState } from "react";
-import { toast } from "sonner";
+import Link from 'next/link';
+import {
+  startTransition,
+  useCallback,
+  useEffect,
+  useState,
+} from 'react';
+import { toast } from 'sonner';
 
-import { useAuth } from "@/app/src/hooks/useAuth";
+import { RoleGuard } from '@/app/src/components/RoleGuard';
+import { useAuth } from '@/app/src/hooks/useAuth';
 
 import {
   getMyClientAppointments,
   getMyProfessionalSchedule,
-} from "@/app/src/services/appointments";
+} from '@/app/src/services/appointments';
 
-import { getDashboardMetrics } from "@/app/src/services/dashboard";
+import { getDashboardMetrics } from '@/app/src/services/dashboard';
 
-import { RoleGuard } from "@/app/src/components/RoleGuard";
-import { Appointment } from "@/app/src/types/appointments";
-import { DashboardMetrics } from "@/app/src/types/dashboard";
+import { Appointment } from '@/app/src/types/appointments';
+import { DashboardMetrics } from '@/app/src/types/dashboard';
 
 export default function DashboardPage() {
   const { user, loading: authLoading } = useAuth();
@@ -33,19 +38,19 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(false);
   const [filtering, setFiltering] = useState(false);
 
-  const [startDate, setStartDate] = useState("2026-05-01");
-  const [endDate, setEndDate] = useState("2026-05-31");
+  const [startDate, setStartDate] = useState('2026-05-01');
+  const [endDate, setEndDate] = useState('2026-05-31');
 
   const upcomingAppointments = clientAppointments.filter(
-    (appointment) => appointment.status === "CONFIRMED",
+    (appointment) => appointment.status === 'CONFIRMED',
   );
 
   const completedAppointments = clientAppointments.filter(
-    (appointment) => appointment.status === "COMPLETED",
+    (appointment) => appointment.status === 'COMPLETED',
   );
 
   const cancelledAppointments = clientAppointments.filter(
-    (appointment) => appointment.status === "CANCELLED",
+    (appointment) => appointment.status === 'CANCELLED',
   );
 
   const today = new Date().toISOString().slice(0, 10);
@@ -59,23 +64,23 @@ export default function DashboardPage() {
   });
 
   const professionalCompletedAppointments = professionalAppointments.filter(
-    (appointment) => appointment.status === "COMPLETED",
+    (appointment) => appointment.status === 'COMPLETED',
   );
 
   const professionalNoShowAppointments = professionalAppointments.filter(
-    (appointment) => appointment.status === "NO_SHOW",
+    (appointment) => appointment.status === 'NO_SHOW',
   );
 
-  async function loadMetrics() {
-    if (!user || user.role !== "GESTOR") return;
+  const loadMetrics = useCallback(async () => {
+    if (!user || user.role !== 'GESTOR') return;
 
     if (!startDate || !endDate) {
-      toast.error("Selecione data inicial e data final.");
+      toast.error('Selecione data inicial e data final.');
       return;
     }
 
     if (startDate > endDate) {
-      toast.error("A data inicial não pode ser maior que a data final.");
+      toast.error('A data inicial não pode ser maior que a data final.');
       return;
     }
 
@@ -91,15 +96,15 @@ export default function DashboardPage() {
       setMetrics(data);
     } catch (error) {
       console.error(error);
-      toast.error("Erro ao carregar indicadores.");
+      toast.error('Erro ao carregar indicadores.');
     } finally {
       setLoading(false);
       setFiltering(false);
     }
-  }
+  }, [user, startDate, endDate]);
 
-  async function loadClientDashboard() {
-    if (!user || user.role !== "CLIENTE") return;
+  const loadClientDashboard = useCallback(async () => {
+    if (!user || user.role !== 'CLIENTE') return;
 
     try {
       setLoading(true);
@@ -109,14 +114,14 @@ export default function DashboardPage() {
       setClientAppointments(data);
     } catch (error) {
       console.error(error);
-      toast.error("Erro ao carregar seus agendamentos.");
+      toast.error('Erro ao carregar seus agendamentos.');
     } finally {
       setLoading(false);
     }
-  }
+  }, [user]);
 
-  async function loadProfessionalDashboard() {
-    if (!user || user.role !== "PROFISSIONAL") return;
+  const loadProfessionalDashboard = useCallback(async () => {
+    if (!user || user.role !== 'PROFISSIONAL') return;
 
     try {
       setLoading(true);
@@ -126,126 +131,138 @@ export default function DashboardPage() {
       setProfessionalAppointments(data);
     } catch (error) {
       console.error(error);
-      toast.error("Erro ao carregar sua agenda.");
+      toast.error('Erro ao carregar sua agenda.');
     } finally {
       setLoading(false);
     }
-  }
+  }, [user]);
 
   useEffect(() => {
-    if (!authLoading && user?.role === "GESTOR") {
+    if (!authLoading && user?.role === 'GESTOR') {
       startTransition(() => {
         loadMetrics();
       });
     }
 
-    if (!authLoading && user?.role === "CLIENTE") {
+    if (!authLoading && user?.role === 'CLIENTE') {
       startTransition(() => {
         loadClientDashboard();
       });
     }
 
-    if (!authLoading && user?.role === "PROFISSIONAL") {
+    if (!authLoading && user?.role === 'PROFISSIONAL') {
       startTransition(() => {
         loadProfessionalDashboard();
       });
     }
-  }, [authLoading, user]);
+  }, [
+    authLoading,
+    user,
+    loadMetrics,
+    loadClientDashboard,
+    loadProfessionalDashboard,
+  ]);
 
-  if (user?.role === "PROFISSIONAL") {
+  if (user?.role === 'PROFISSIONAL') {
     return (
-      <div className="space-y-8">
-        <div>
-          <h1 className="text-3xl font-bold">Dashboard</h1>
-          <p className="text-zinc-500">Resumo da sua agenda profissional</p>
+      <RoleGuard allowedRoles={['PROFISSIONAL']}>
+        <div className="space-y-8">
+          <div>
+            <h1 className="text-3xl font-bold">Dashboard</h1>
+            <p className="text-zinc-500">Resumo da sua agenda profissional</p>
+          </div>
+
+          {loading ? (
+            <div className="rounded-2xl bg-white p-6 shadow-sm">
+              Carregando...
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="rounded-2xl bg-white p-6 shadow-sm">
+                <p className="text-sm text-zinc-500">Agenda do dia</p>
+                <strong className="text-3xl">
+                  {todayAppointments.length}
+                </strong>
+              </div>
+
+              <div className="rounded-2xl bg-white p-6 shadow-sm">
+                <p className="text-sm text-zinc-500">Atendimentos concluídos</p>
+                <strong className="text-3xl">
+                  {professionalCompletedAppointments.length}
+                </strong>
+              </div>
+
+              <div className="rounded-2xl bg-white p-6 shadow-sm">
+                <p className="text-sm text-zinc-500">No-show</p>
+                <strong className="text-3xl">
+                  {professionalNoShowAppointments.length}
+                </strong>
+              </div>
+            </div>
+          )}
+
+          <Link
+            href="/my-schedule"
+            className="inline-flex h-11 items-center rounded-xl bg-black px-5 text-white"
+          >
+            Ver minha agenda
+          </Link>
         </div>
-
-        {loading ? (
-          <div className="rounded-2xl bg-white p-6 shadow-sm">
-            Carregando...
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="rounded-2xl bg-white p-6 shadow-sm">
-              <p className="text-sm text-zinc-500">Agenda do dia</p>
-              <strong className="text-3xl">{todayAppointments.length}</strong>
-            </div>
-
-            <div className="rounded-2xl bg-white p-6 shadow-sm">
-              <p className="text-sm text-zinc-500">Atendimentos concluídos</p>
-              <strong className="text-3xl">
-                {professionalCompletedAppointments.length}
-              </strong>
-            </div>
-
-            <div className="rounded-2xl bg-white p-6 shadow-sm">
-              <p className="text-sm text-zinc-500">No-show</p>
-              <strong className="text-3xl">
-                {professionalNoShowAppointments.length}
-              </strong>
-            </div>
-          </div>
-        )}
-
-        <Link
-          href="/my-schedule"
-          className="inline-flex h-11 items-center rounded-xl bg-black px-5 text-white"
-        >
-          Ver minha agenda
-        </Link>
-      </div>
+      </RoleGuard>
     );
   }
 
-  if (user?.role === "CLIENTE") {
+  if (user?.role === 'CLIENTE') {
     return (
-      <div className="space-y-8">
-        <div>
-          <h1 className="text-3xl font-bold">Dashboard</h1>
-          <p className="text-zinc-500">Resumo dos seus agendamentos</p>
+      <RoleGuard allowedRoles={['CLIENTE']}>
+        <div className="space-y-8">
+          <div>
+            <h1 className="text-3xl font-bold">Dashboard</h1>
+            <p className="text-zinc-500">Resumo dos seus agendamentos</p>
+          </div>
+
+          {loading ? (
+            <div className="rounded-2xl bg-white p-6 shadow-sm">
+              Carregando...
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="rounded-2xl bg-white p-6 shadow-sm">
+                <p className="text-sm text-zinc-500">Próximos agendamentos</p>
+                <strong className="text-3xl">
+                  {upcomingAppointments.length}
+                </strong>
+              </div>
+
+              <div className="rounded-2xl bg-white p-6 shadow-sm">
+                <p className="text-sm text-zinc-500">Concluídos</p>
+                <strong className="text-3xl">
+                  {completedAppointments.length}
+                </strong>
+              </div>
+
+              <div className="rounded-2xl bg-white p-6 shadow-sm">
+                <p className="text-sm text-zinc-500">Cancelados</p>
+                <strong className="text-3xl">
+                  {cancelledAppointments.length}
+                </strong>
+              </div>
+            </div>
+          )}
+
+          <Link
+            href="/my-appointments"
+            className="inline-flex h-11 items-center rounded-xl bg-black px-5 text-white"
+          >
+            Ver meus agendamentos
+          </Link>
         </div>
-
-        {loading ? (
-          <div className="rounded-2xl bg-white p-6 shadow-sm">
-            Carregando...
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="rounded-2xl bg-white p-6 shadow-sm">
-              <p className="text-sm text-zinc-500">Próximos agendamentos</p>
-              <strong className="text-3xl">
-                {upcomingAppointments.length}
-              </strong>
-            </div>
-
-            <div className="rounded-2xl bg-white p-6 shadow-sm">
-              <p className="text-sm text-zinc-500">Concluídos</p>
-              <strong className="text-3xl">
-                {completedAppointments.length}
-              </strong>
-            </div>
-
-            <div className="rounded-2xl bg-white p-6 shadow-sm">
-              <p className="text-sm text-zinc-500">Cancelados</p>
-              <strong className="text-3xl">
-                {cancelledAppointments.length}
-              </strong>
-            </div>
-          </div>
-        )}
-
-        <Link
-          href="/my-appointments"
-          className="inline-flex h-11 items-center rounded-xl bg-black px-5 text-white"
-        >
-          Ver meus agendamentos
-        </Link>
-      </div>
+      </RoleGuard>
     );
   }
 
   return (
-    <RoleGuard allowedRoles={["GESTOR", "PROFISSIONAL", "CLIENTE"]}>
+    <RoleGuard allowedRoles={['GESTOR', 'PROFISSIONAL', 'CLIENTE']}>
       <div className="space-y-8">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
           <div>
@@ -275,7 +292,7 @@ export default function DashboardPage() {
               disabled={filtering}
               className="h-11 rounded-xl bg-black px-5 text-white disabled:opacity-50"
             >
-              {filtering ? "Filtrando..." : "Filtrar"}
+              {filtering ? 'Filtrando...' : 'Filtrar'}
             </button>
           </div>
         </div>
@@ -334,7 +351,7 @@ export default function DashboardPage() {
 
                       <strong>
                         {item.count} agendamento
-                        {item.count === 1 ? "" : "s"}
+                        {item.count === 1 ? '' : 's'}
                       </strong>
                     </div>
                   ))}

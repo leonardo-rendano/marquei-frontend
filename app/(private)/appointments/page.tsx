@@ -1,8 +1,9 @@
 "use client";
 
-import { startTransition, useEffect, useState } from "react";
+import { startTransition, useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
+import { RoleGuard } from "@/app/src/components/RoleGuard";
 import { useAuth } from "@/app/src/hooks/useAuth";
 
 import {
@@ -17,7 +18,6 @@ import { getProfessionals } from "@/app/src/services/professionals";
 import { getServices } from "@/app/src/services/services";
 import { getUsers } from "@/app/src/services/users";
 
-import { RoleGuard } from "@/app/src/components/RoleGuard";
 import { Appointment } from "@/app/src/types/appointments";
 import { Professional } from "@/app/src/types/professionals";
 import { Service } from "@/app/src/types/service";
@@ -45,7 +45,7 @@ export default function AppointmentsPage() {
     string | null
   >(null);
 
-  async function loadData() {
+  const loadData = useCallback(async () => {
     if (!user) return;
 
     try {
@@ -69,7 +69,7 @@ export default function AppointmentsPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [user]);
 
   async function loadSlots() {
     if (!professionalId || !serviceId || !date) {
@@ -182,7 +182,7 @@ export default function AppointmentsPage() {
         loadData();
       });
     }
-  }, [authLoading, user]);
+  }, [authLoading, user, loadData]);
 
   function getStatusBadge(status: string) {
     const styles: Record<string, string> = {
@@ -374,16 +374,20 @@ export default function AppointmentsPage() {
                     <td className="p-4">
                       {appointment.status === "CONFIRMED" ? (
                         <div className="flex justify-end gap-2">
-                          <button
-                            type="button"
-                            disabled={updatingAppointmentId === appointment.id}
-                            onClick={() => handleComplete(appointment.id)}
-                            className="px-3 py-2 rounded-lg bg-green-600 text-white text-sm disabled:opacity-50"
-                          >
-                            {updatingAppointmentId === appointment.id
-                              ? "Atualizando..."
-                              : "Concluir"}
-                          </button>
+                          {user?.role === "PROFISSIONAL" && (
+                            <button
+                              type="button"
+                              disabled={
+                                updatingAppointmentId === appointment.id
+                              }
+                              onClick={() => handleComplete(appointment.id)}
+                              className="px-3 py-2 rounded-lg bg-green-600 text-white text-sm disabled:opacity-50"
+                            >
+                              {updatingAppointmentId === appointment.id
+                                ? "Atualizando..."
+                                : "Concluir"}
+                            </button>
+                          )}
 
                           <button
                             type="button"

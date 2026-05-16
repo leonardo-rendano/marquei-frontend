@@ -1,13 +1,13 @@
 "use client";
 
-import { startTransition, useEffect, useState } from "react";
+import { startTransition, useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
+import { RoleGuard } from "@/app/src/components/RoleGuard";
 import { useAuth } from "@/app/src/hooks/useAuth";
 
 import { createService, getServices } from "@/app/src/services/services";
 
-import { RoleGuard } from "@/app/src/components/RoleGuard";
 import { Service } from "@/app/src/types/service";
 
 export default function ServicesPage() {
@@ -21,7 +21,7 @@ export default function ServicesPage() {
   const [duration, setDuration] = useState("");
   const [price, setPrice] = useState("");
 
-  async function loadServices() {
+  const loadServices = useCallback(async () => {
     if (!user) return;
 
     try {
@@ -36,7 +36,7 @@ export default function ServicesPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [user]);
 
   async function handleCreateService(e: React.FormEvent) {
     e.preventDefault();
@@ -76,7 +76,7 @@ export default function ServicesPage() {
         loadServices();
       });
     }
-  }, [authLoading, user]);
+  }, [authLoading, user, loadServices]);
 
   return (
     <RoleGuard allowedRoles={["GESTOR"]}>

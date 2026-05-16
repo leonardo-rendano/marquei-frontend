@@ -1,19 +1,24 @@
-"use client";
+'use client';
 
-import { startTransition, useEffect, useState } from "react";
-import { toast } from "sonner";
+import {
+  startTransition,
+  useCallback,
+  useEffect,
+  useState,
+} from 'react';
+import { toast } from 'sonner';
 
-import { useAuth } from "@/app/src/hooks/useAuth";
+import { RoleGuard } from '@/app/src/components/RoleGuard';
+import { useAuth } from '@/app/src/hooks/useAuth';
 
 import {
   cancelAppointment,
   completeAppointment,
   getMyProfessionalSchedule,
   markAppointmentAsNoShow,
-} from "@/app/src/services/appointments";
+} from '@/app/src/services/appointments';
 
-import { Appointment } from "@/app/src/types/appointments";
-import { RoleGuard } from "@/app/src/components/RoleGuard";
+import { Appointment } from '@/app/src/types/appointments';
 
 export default function MySchedulePage() {
   const { user, loading: authLoading } = useAuth();
@@ -22,7 +27,7 @@ export default function MySchedulePage() {
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
-  async function loadSchedule() {
+  const loadSchedule = useCallback(async () => {
     if (!user) return;
 
     try {
@@ -33,23 +38,23 @@ export default function MySchedulePage() {
       setAppointments(data);
     } catch (error) {
       console.error(error);
-      toast.error("Erro ao carregar sua agenda.");
+      toast.error('Erro ao carregar sua agenda.');
     } finally {
       setLoading(false);
     }
-  }
+  }, [user]);
 
   async function updateAppointment(
     id: string,
-    action: "complete" | "cancel" | "no-show",
+    action: 'complete' | 'cancel' | 'no-show',
   ) {
     try {
       setUpdatingId(id);
 
       const updated =
-        action === "complete"
+        action === 'complete'
           ? await completeAppointment(id)
-          : action === "cancel"
+          : action === 'cancel'
             ? await cancelAppointment(id)
             : await markAppointmentAsNoShow(id);
 
@@ -59,10 +64,10 @@ export default function MySchedulePage() {
         ),
       );
 
-      toast.success("Agendamento atualizado.");
+      toast.success('Agendamento atualizado.');
     } catch (error) {
       console.error(error);
-      toast.error("Erro ao atualizar agendamento.");
+      toast.error('Erro ao atualizar agendamento.');
     } finally {
       setUpdatingId(null);
     }
@@ -70,23 +75,23 @@ export default function MySchedulePage() {
 
   function getStatusBadge(status: string) {
     const styles: Record<string, string> = {
-      CONFIRMED: "bg-blue-100 text-blue-700",
-      COMPLETED: "bg-green-100 text-green-700",
-      CANCELLED: "bg-red-100 text-red-700",
-      NO_SHOW: "bg-orange-100 text-orange-700",
+      CONFIRMED: 'bg-blue-100 text-blue-700',
+      COMPLETED: 'bg-green-100 text-green-700',
+      CANCELLED: 'bg-red-100 text-red-700',
+      NO_SHOW: 'bg-orange-100 text-orange-700',
     };
 
     const labels: Record<string, string> = {
-      CONFIRMED: "Confirmado",
-      COMPLETED: "Concluído",
-      CANCELLED: "Cancelado",
-      NO_SHOW: "No-show",
+      CONFIRMED: 'Confirmado',
+      COMPLETED: 'Concluído',
+      CANCELLED: 'Cancelado',
+      NO_SHOW: 'No-show',
     };
 
     return (
       <span
         className={`px-3 py-1 rounded-full text-sm font-medium ${
-          styles[status] ?? "bg-zinc-100 text-zinc-700"
+          styles[status] ?? 'bg-zinc-100 text-zinc-700'
         }`}
       >
         {labels[status] ?? status}
@@ -100,10 +105,10 @@ export default function MySchedulePage() {
         loadSchedule();
       });
     }
-  }, [authLoading, user]);
+  }, [authLoading, user, loadSchedule]);
 
   return (
-    <RoleGuard allowedRoles={["PROFISSIONAL"]}>
+    <RoleGuard allowedRoles={['PROFISSIONAL']}>
       <div className="space-y-8">
         <div>
           <h1 className="text-3xl font-bold">Minha agenda</h1>
@@ -131,12 +136,12 @@ export default function MySchedulePage() {
               <tbody>
                 {appointments.map((appointment) => (
                   <tr key={appointment.id} className="border-b">
-                    <td className="p-4">{appointment.client?.name ?? "-"}</td>
+                    <td className="p-4">{appointment.client?.name ?? '-'}</td>
 
-                    <td className="p-4">{appointment.service?.name ?? "-"}</td>
+                    <td className="p-4">{appointment.service?.name ?? '-'}</td>
 
                     <td className="p-4">
-                      {new Date(appointment.startAt).toLocaleString("pt-BR")}
+                      {new Date(appointment.startAt).toLocaleString('pt-BR')}
                     </td>
 
                     <td className="p-4">
@@ -144,13 +149,13 @@ export default function MySchedulePage() {
                     </td>
 
                     <td className="p-4">
-                      {appointment.status === "CONFIRMED" ? (
+                      {appointment.status === 'CONFIRMED' ? (
                         <div className="flex justify-end gap-2">
                           <button
                             type="button"
                             disabled={updatingId === appointment.id}
                             onClick={() =>
-                              updateAppointment(appointment.id, "complete")
+                              updateAppointment(appointment.id, 'complete')
                             }
                             className="px-3 py-2 rounded-lg bg-green-600 text-white text-sm disabled:opacity-50"
                           >
@@ -161,7 +166,7 @@ export default function MySchedulePage() {
                             type="button"
                             disabled={updatingId === appointment.id}
                             onClick={() =>
-                              updateAppointment(appointment.id, "no-show")
+                              updateAppointment(appointment.id, 'no-show')
                             }
                             className="px-3 py-2 rounded-lg bg-orange-500 text-white text-sm disabled:opacity-50"
                           >
@@ -172,7 +177,7 @@ export default function MySchedulePage() {
                             type="button"
                             disabled={updatingId === appointment.id}
                             onClick={() =>
-                              updateAppointment(appointment.id, "cancel")
+                              updateAppointment(appointment.id, 'cancel')
                             }
                             className="px-3 py-2 rounded-lg bg-red-600 text-white text-sm disabled:opacity-50"
                           >

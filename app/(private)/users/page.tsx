@@ -1,13 +1,13 @@
 "use client";
 
-import { startTransition, useEffect, useState } from "react";
+import { startTransition, useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
+import { RoleGuard } from "@/app/src/components/RoleGuard";
 import { useAuth } from "@/app/src/hooks/useAuth";
 
 import { createUser, getUsers } from "@/app/src/services/users";
 
-import { RoleGuard } from "@/app/src/components/RoleGuard";
 import { User, UserRole } from "@/app/src/types/user";
 
 const roles: UserRole[] = ["GESTOR", "PROFISSIONAL", "CLIENTE"];
@@ -24,7 +24,7 @@ export default function UsersPage() {
   const [password, setPassword] = useState("");
   const [role, setRole] = useState<UserRole>("CLIENTE");
 
-  async function loadUsers() {
+  const loadUsers = useCallback(async () => {
     if (!user) return;
 
     try {
@@ -39,7 +39,7 @@ export default function UsersPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [user]);
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
@@ -81,7 +81,31 @@ export default function UsersPage() {
         loadUsers();
       });
     }
-  }, [authLoading, user]);
+  }, [authLoading, user, loadUsers]);
+
+  function getRoleBadge(role: UserRole) {
+    const styles: Record<UserRole, string> = {
+      GESTOR: "bg-purple-100 text-purple-700",
+      PROFISSIONAL: "bg-blue-100 text-blue-700",
+      CLIENTE: "bg-green-100 text-green-700",
+    };
+
+    const labels: Record<UserRole, string> = {
+      GESTOR: "Gestor",
+      PROFISSIONAL: "Profissional",
+      CLIENTE: "Cliente",
+    };
+
+    return (
+      <span
+        className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide ${
+          styles[role]
+        }`}
+      >
+        {labels[role]}
+      </span>
+    );
+  }
 
   return (
     <RoleGuard allowedRoles={["GESTOR"]}>
@@ -161,11 +185,7 @@ export default function UsersPage() {
 
                     <td className="p-4">{user.email}</td>
 
-                    <td className="p-4">
-                      <span className="px-3 py-1 rounded-full bg-zinc-100 text-sm">
-                        {user.role}
-                      </span>
-                    </td>
+                    <td className="p-4">{getRoleBadge(user.role)}</td>
                   </tr>
                 ))}
 
